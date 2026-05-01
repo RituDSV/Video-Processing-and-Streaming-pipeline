@@ -1,0 +1,34 @@
+{
+  "name": "video-processing-and-streaming-pipeline",
+  "version": "1.0.0",
+  "description": "Video Processing and Streaming pipeline - using tech stack like postgres, redis Bull, Kafka, NextJS and NestJS",
+  "main": "index.js",
+  "scripts": {
+    "dev": "npm run dev",
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "prisma:migrate": "npm exec prisma migrate dev --workspace apps/api",
+    "prisma:generate": "npm exec prisma generate --workspace apps/api && npm exec prisma generate --workspace apps/worker"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RituDSV/Video-Processing-and-Streaming-pipeline.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RituDSV/Video-Processing-and-Streaming-pipeline/issues"
+  },
+  "homepage": "https://github.com/RituDSV/Video-Processing-and-Streaming-pipeline#readme",
+  "dependencies": {
+    "@nestjs/microservices": "^11.1.19",
+    "kafkajs": "^2.2.4"
+  },
+  "prisma": {
+    "schema": "api/src/infra/db/prisma/schema.prisma"
+  }
+}

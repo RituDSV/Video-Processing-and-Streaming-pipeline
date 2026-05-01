@@ -1,0 +1,28 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "build": "nest build",
+    "start:prod": "node dist/main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "prisma": {
+    "schema": "../api/src/infra/db/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.x",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.19",
+    "@nestjs/microservices": "^11.1.19",
+    "@video-platform/config": "1.0.0",
+    "@video-platform/shared": "1.0.0",
+    "ioredis": "^5.10.1",
+    "kafkajs": "^2.x"
+  }
+}
