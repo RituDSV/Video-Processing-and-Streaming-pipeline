@@ -4,6 +4,7 @@ import { PrismaService } from "../infra/db/prisma.service";
 import { RedisService } from "../infra/redis/redis.service";
 import { FfmpegService } from "../media/ffmpeg.service";
 import { VideoUploadedEvent } from "@video-platform/shared";
+// import { RendiService } from "../media/rendi.service";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS_MS = [10_000, 60_000, 300_000]; // 10s, 1m, 5m
@@ -16,6 +17,7 @@ export class VideoUploadedConsumer {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly ffmpeg: FfmpegService,
+    // private readonly rendi: RendiService,
     @Inject("KAFKA_CLIENT") private readonly kafka: ClientKafka
   ) {}
 
@@ -76,6 +78,11 @@ export class VideoUploadedConsumer {
         { generateHls: true, generateThumbnails: true }
       );
 
+      // const result = await this.rendi.processVideo({
+      //   videoId,
+      //   inputUrl: sourcePath, // ideally a signed S3 or upload URL
+      // });
+
       /* ✅ Persist metadata */
       await this.prisma.video.update({
         where: { id: videoId },
@@ -106,6 +113,24 @@ export class VideoUploadedConsumer {
           },
         },
       });
+
+      // await this.prisma.video.update({
+      //   where: { id: videoId },
+      //   data: {
+      //     status: 'READY',
+      //     durationSec: result.durationSeconds,
+      //     width: result.width,
+      //     height: result.height,
+      //     renditions: {
+      //       create: [
+      //         {
+      //           type: 'HLS',
+      //           path: result.hlsUrl,
+      //         },
+      //       ],
+      //     },
+      //   },
+      // });
 
       this.logger.log(`Video ${videoId} processed successfully`);
     } catch (error: any) {

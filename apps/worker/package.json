@@ -23,6 +23,7 @@
     "@video-platform/config": "1.0.0",
     "@video-platform/shared": "1.0.0",
     "ioredis": "^5.10.1",
-    "kafkajs": "^2.x"
+    "kafkajs": "^2.x",
+    "node-fetch": "^3.3.2"
   }
 }
