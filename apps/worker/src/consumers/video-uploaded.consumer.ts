@@ -4,6 +4,7 @@ import { PrismaService } from "../infra/db/prisma.service";
 import { RedisService } from "../infra/redis/redis.service";
 import { FfmpegService } from "../media/ffmpeg.service";
 import { VideoUploadedEvent } from "@video-platform/shared";
+import { firstValueFrom } from "rxjs";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS_MS = [10_000, 60_000, 300_000]; // 10s, 1m, 5m
@@ -108,6 +109,11 @@ export class VideoUploadedConsumer {
       });
 
       this.logger.log(`Video ${videoId} processed successfully`);
+      await firstValueFrom(this.kafka.emit("video.processed",  {
+        videoId,
+        status: "READY",
+      }));
+      this.logger.log(`Video ${videoId} event sent to kafka successfully`);
     } catch (error: any) {
       this.logger.error(`Processing failed for video ${videoId}`, error?.stack);
 
@@ -116,6 +122,11 @@ export class VideoUploadedConsumer {
         where: { id: videoId },
         data: { status: "FAILED" },
       });
+      await firstValueFrom(this.kafka.emit("video.processed",  {
+        videoId,
+        status: "FAILED",
+        errorMessage: error.message,
+      }));
 
       /* 6️⃣ Release idempotency lock so retries are possible */
       await this.redis.releaseLock(lockKey);
