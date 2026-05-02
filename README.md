@@ -8,7 +8,8 @@ npm run build --workspace packages/shared
 
 npm exec prisma generate --workspace apps/api
 
-npm exec prisma generate --workspace apps/worker
+npm exec prisma generate --workspace apps/worker 
+npm exec prisma generate --workspace apps/worker --schema=../api/src/infra/db/prisma/schema.prisma
 
 
 /videos/:id
@@ -30,6 +31,8 @@ Using Postman + logs + filesystem + DB, you can verify:
 ✅ Renditions persisted in DB
 
 That’s the entire system.
+
+ docker run -it --rm confluentinc/cp-kafka kafka-storage random-uuid
 
 npm run start:dev --workspace apps/api
 npm run start:dev --workspace apps/worker

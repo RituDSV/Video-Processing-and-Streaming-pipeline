@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { KafkaModule } from './infra/kafka/kafka.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { PrismaModule } from './infra/db/prisma/prisma.module';
+import { VideoGateway } from './modules/videos/video.gateway';
+import { VideoProcessedConsumer } from './infra/kafka/video-processed.consumer';
 
 @Module({
   imports: [
@@ -18,5 +20,7 @@ import { PrismaModule } from './infra/db/prisma/prisma.module';
     // Domain modules
     VideosModule,
   ],
+  controllers: [VideoProcessedConsumer],
+  providers: [VideoGateway]
 })
 export class AppModule {}

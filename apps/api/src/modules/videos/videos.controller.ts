@@ -1,6 +1,11 @@
 import {
   Controller,
+  DefaultValuePipe,
+  Get,
+  Param,
+  ParseIntPipe,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -10,7 +15,7 @@ import { videoStorage } from './storage/multer.config';
 
 @Controller('videos')
 export class VideosController {
-  constructor(private readonly videos: VideosService) {}
+  constructor(private readonly videos: VideosService) { }
 
   @Post('upload')
   @UseInterceptors(
@@ -23,5 +28,18 @@ export class VideosController {
   )
   async upload(@UploadedFile() file: Express.Multer.File) {
     return this.videos.registerUploadedVideo(file);
+  }
+
+  @Get()
+  async listVideos(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(12), ParseIntPipe) limit: number,
+  ) {
+    return this.videos.getVideos(page, limit);
+  }
+
+  @Get(':id')
+  async getVideo(@Param('id') id: string) {
+    return this.videos.getVideoById(id);
   }
 }

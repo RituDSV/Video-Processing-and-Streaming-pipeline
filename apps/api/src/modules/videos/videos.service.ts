@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { KafkaProducerService } from '../../infra/kafka/kafka-producer.service';
 import { VideoEvent } from '@video-platform/shared';
 import { PrismaService } from '../../infra/db/prisma/prisma.service';
@@ -8,7 +8,7 @@ export class VideosService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly kafka: KafkaProducerService,
-  ) {}
+  ) { }
 
   async registerUploadedVideo(file: Express.Multer.File) {
     if (!file) {
@@ -37,5 +37,72 @@ export class VideosService {
       videoId: video.id,
       status: 'UPLOADED',
     };
+  }
+
+  async getVideoById(id: string) {
+    const video = await this.prisma.video.findUnique({
+      where: { id },
+      include: { renditions: true },
+    });
+
+    if (!video) throw new NotFoundException(`Video ${id} not found`);
+
+    const mp4 = video.renditions.find((r) => r.type === 'MP4');
+    const hls = video.renditions.find((r) => r.type === 'HLS');
+    console.log('raw rendition path:', mp4?.path);
+
+    return {
+      videoId: video.id,
+      status: video.status,
+      originalName: video.originalName,
+      durationSec: video.durationSec,
+      width: video.width,
+      height: video.height,
+      url: this.toUrl(mp4?.path ?? hls?.path ?? null),
+      renditions: {
+        mp4: this.toUrl(mp4?.path),
+        hls: this.toUrl(hls?.path),
+      },
+    };
+  }
+
+  async getVideos(page: number, limit: number) {
+    const skip = (page - 1) * limit;
+  
+    const [videos, total] = await this.prisma.$transaction([
+      this.prisma.video.findMany({
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { renditions: true },
+      }),
+      this.prisma.video.count(),
+    ]);
+  
+    return {
+      data: videos.map((v) => ({
+        videoId: v.id,
+        originalName: v.originalName,
+        status: v.status,
+        durationSec: v.durationSec,
+        width: v.width,
+        height: v.height,
+        sizeBytes: Number(v.sizeBytes),
+        createdAt: v.createdAt,
+        url: this.toUrl(v.renditions.find(r => r.type === 'MP4')?.path
+          ?? v.renditions.find(r => r.type === 'HLS')?.path),
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+  
+  private toUrl(path: string | undefined | null): string | null {
+    if (!path) return null;
+    const segment = path.split('/processed/')[1];
+    if (!segment) return null;
+    return `${process.env.API_URL ?? 'http://localhost:3000'}/processed/${segment}`;
   }
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import VideoPlayer from "./components/VideoPlayer";
-import VideoNotifications from "./components/VideoNotifications";
+import VideoNotifications from "../components/VideoNotifications";
+import VideoPlayer from "../components/VideoPlayer";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
 

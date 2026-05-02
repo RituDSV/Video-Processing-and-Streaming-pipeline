@@ -26,6 +26,9 @@ import { KafkaProducerService } from './kafka-producer.service';
                 clientId: 'video-api',
                 brokers: brokers.split(','),
               },
+              consumer: {
+                groupId: 'video-api-consumer', // 👈 unique groupId
+              },
             },
           };
         },
