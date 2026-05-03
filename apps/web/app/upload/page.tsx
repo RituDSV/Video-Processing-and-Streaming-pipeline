@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import VideoNotifications from "../components/VideoNotifications";
 import VideoPlayer from "../components/VideoPlayer";
 
 type UploadState = "idle" | "uploading" | "success" | "error";
@@ -78,8 +77,6 @@ export default function Home() {
 
   return (
     <>
-      <VideoNotifications onVideoReady={(url) => setVideoUrl(url)}/>
-
       <main className="main">
         <div className="container">
           {/* Header */}

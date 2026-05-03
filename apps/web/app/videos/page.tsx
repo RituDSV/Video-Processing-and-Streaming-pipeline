@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useVideoContext } from "../context/VideoContext";
 
 const API = "http://localhost:3000";
 
@@ -196,6 +197,8 @@ export default function VideosPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<VideoItem | null>(null);
+  const { notifications } = useVideoContext();
+
   const LIMIT = 12;
 
   const fetchVideos = useCallback(async (p: number) => {
@@ -213,6 +216,18 @@ export default function VideosPage() {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!notifications[0]) return;
+    const { videoId, status } = notifications[0];
+    // patch the matching card in-place without refetching
+    setVideos((prev) =>
+      prev.map((v) =>
+        v.videoId === videoId ? { ...v, status: status === "READY" ? "READY" : "FAILED" } : v
+      )
+    );
+  }, [notifications[0]?.ts]);
+
 
   useEffect(() => { fetchVideos(1); }, [fetchVideos]);
 
