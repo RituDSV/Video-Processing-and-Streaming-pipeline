@@ -11,6 +11,7 @@
   "dependencies": {
     "@nestjs/core": "11.1.19",
     "@nestjs/microservices": "11.1.19",
+    "hls.js": "^1.6.16",
     "next": "^16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",

@@ -49,3 +49,17 @@ model VideoRendition {
 
   @@index([videoId])
 }
+
+model VideoDeadLetter {
+  id           String   @id @default(uuid())
+  videoId      String
+  topic        String   // e.g. "video.uploaded"
+  errorMessage String
+  retryCount   Int
+  payload      Json     // full event payload for reprocessing
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([videoId])
+}

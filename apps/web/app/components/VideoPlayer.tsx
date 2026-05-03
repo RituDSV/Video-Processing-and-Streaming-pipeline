@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Hls from "hls.js";
 
 interface VideoPlayerProps {
   videoUrl: string;
@@ -11,19 +12,32 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    setSrc(videoUrl);
-  }, [videoUrl]);
+    if (!src) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (src.endsWith(".m3u8")) {
+      if (Hls.isSupported()) {
+        console.log("hls supported video");
+        const hls = new Hls();
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        return () => hls.destroy(); // cleanup on unmount
+      } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+        // Safari supports HLS natively
+        video.src = src;
+      }
+    } else {
+      // Regular MP4 — just set src directly
+      video.src = src;
+    }
+  }, [src]);
 
   return (
     <div className="player-wrapper">
       {src ? (
         <div className="player-container">
-          <video
-            ref={videoRef}
-            src={src}
-            controls
-            className="video-el"
-          >
+          <video ref={videoRef} src={src} controls className="video-el">
             Your browser does not support the video tag.
           </video>
           <div className="player-footer">
@@ -39,7 +53,14 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
       ) : (
         <div className="player-empty">
           <div className="player-empty__icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <polygon points="5 3 19 12 5 21 5 3" />
             </svg>
           </div>
