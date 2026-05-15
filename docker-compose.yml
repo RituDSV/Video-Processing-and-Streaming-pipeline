@@ -1,4 +1,40 @@
 services:
+  
+# 🟢 API
+  api:
+    build:
+      context: ./apps/api
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    depends_on:
+      - postgres
+      - redis
+      - kafka
+    restart: unless-stopped
+
+  # 🔵 WEB
+  web:
+    build:
+      context: ./apps/web
+    ports:
+      - "3001:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # 🟣 WORKER
+  worker:
+    build:
+      context: ./apps/worker
+    env_file:
+      - .env.docker
+    depends_on:
+      - kafka
+      - redis
+      - postgres
+    restart: unless-stopped
   redis:
     image: redis/redis-stack-server:latest
     ports:
@@ -13,7 +49,7 @@ services:
       CLUSTER_ID: bEF0XHlHSO6Uo6M9NFf-XA
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -30,6 +66,10 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 5s
+      retries: 5
 
 volumes:
   postgres_data:
