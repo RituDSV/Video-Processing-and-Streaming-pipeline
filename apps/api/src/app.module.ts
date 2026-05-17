@@ -6,6 +6,8 @@ import { VideosModule } from './modules/videos/videos.module';
 import { PrismaModule } from './infra/db/prisma/prisma.module';
 import { VideoGateway } from './modules/videos/video.gateway';
 import { VideoProcessedConsumer } from './infra/kafka/video-processed.consumer';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -20,7 +22,7 @@ import { VideoProcessedConsumer } from './infra/kafka/video-processed.consumer';
     // Domain modules
     VideosModule,
   ],
-  controllers: [VideoProcessedConsumer],
-  providers: [VideoGateway]
+  controllers: [VideoProcessedConsumer, AppController],
+  providers: [VideoGateway, AppService]
 })
 export class AppModule {}

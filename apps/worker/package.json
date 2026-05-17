@@ -26,6 +26,12 @@
     "@video-platform/shared": "1.0.0",
     "ioredis": "^5.10.1",
     "kafkajs": "^2.x",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+     "@prisma/client": "^7.7.0",
+  "@prisma/adapter-pg": "^7.7.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.21",
+     "prisma": "^7.7.0"
   }
 }

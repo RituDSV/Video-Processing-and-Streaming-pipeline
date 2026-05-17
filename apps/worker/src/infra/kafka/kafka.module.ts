@@ -24,6 +24,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
               client: {
                 clientId: 'video-worker',
                 brokers: brokers.split(','),
+                retry: {
+                  retries: 10,
+                  initialRetryTime: 3000,
+                },
               },
             },
           };

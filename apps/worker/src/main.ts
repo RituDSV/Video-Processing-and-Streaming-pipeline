@@ -8,7 +8,7 @@ async function bootstrap() {
     WorkerModule,
     createKafkaOptions({
       clientId: 'video-worker',
-      groupId: 'video-worker-transcode',
+      groupId: 'video-worker-transcode',   
     }),
   );
   const kafkaClient = app.get<ClientKafka>('KAFKA_CLIENT');

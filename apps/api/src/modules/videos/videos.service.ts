@@ -152,6 +152,6 @@ export class VideosService {
     if (!path) return null;
     const segment = path.split('/processed/')[1];
     if (!segment) return null;
-    return `${process.env.API_URL ?? 'http://localhost:3000'}/processed/${segment}`;
+    return `${process.env.PUBLIC_API_URL ?? 'http://localhost:3000'}/processed/${segment}`;
   }
 }
