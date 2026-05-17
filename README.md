@@ -38,3 +38,35 @@ npm run start:dev --workspace apps/api
 npm run start:dev --workspace apps/worker
 
 ![alt text](image.png)
+
+# Build process
+docker compose build
+docker compose up
+docker compose up --build
+docker compose up -d
+# all services
+docker compose logs -f
+
+# specific service
+docker compose logs -f api
+docker compose logs -f worker
+docker compose ps
+# API
+curl http://localhost:3000/health
+
+# Web
+curl http://localhost:3001
+# stop but keep volumes
+docker compose down
+
+# stop AND wipe postgres data (clean slate retest)
+docker compose down -v
+
+# remove all stopped containers, dangling images, build cache
+docker system prune -af
+
+# check how much space you have now
+docker system df
+
+# check env varibales used
+grep -r "process\.env\." apps/api/src apps/worker/src | grep -v node_modules | grep -oE 'process\.env\.[A-Z_]+' | sort -u

@@ -10,6 +10,10 @@ export function createKafkaOptions(params: {
       client: {
         clientId: params.clientId,
         brokers: process.env.KAFKA_BROKERS!.split(','),
+        retry: {
+          retries: 10,
+          initialRetryTime: 3000,
+        },
       },
       consumer: {
         groupId: params.groupId,

@@ -1,45 +1,148 @@
 services:
-  
-# 🟢 API
+
+  # 🗄️ MIGRATIONS
+  migrate:
+    build:
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    image: riturroy/myvideoapp-api:latest
+    command: ["sh", "-c", "cd /app/apps/api && npx prisma migrate deploy"]
+    env_file:
+      - .env.docker
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    networks:
+      - app-network
+
+  # 🟢 API
   api:
     build:
-      context: ./apps/api
+      context: .
+      dockerfile: ./apps/api/Dockerfile
+    image: riturroy/myvideoapp-api:latest
     ports:
       - "3000:3000"
     env_file:
       - .env.docker
+    volumes:
+      - uploads_data:/app/uploads
+      - processed_data:/app/processed
     depends_on:
-      - postgres
-      - redis
-      - kafka
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 🔵 WEB
   web:
     build:
-      context: ./apps/web
+      context: .
+      dockerfile: ./apps/web/Dockerfile
+    image: riturroy/myvideoapp-web:latest
     ports:
       - "3001:3000"
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     restart: unless-stopped
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # 🟣 WORKER
   worker:
     build:
-      context: ./apps/worker
+      context: .
+      dockerfile: ./apps/worker/Dockerfile
+    image: riturroy/myvideoapp-worker:latest
     env_file:
       - .env.docker
     depends_on:
-      - kafka
-      - redis
-      - postgres
-    restart: unless-stopped
+      migrate:
+        condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+    environment:
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    volumes:
+      - uploads_data:/app/uploads 
+      - processed_data:/app/processed
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 🔴 REDIS
   redis:
     image: redis/redis-stack-server:latest
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # 🟡 KAFKA
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     ports:
@@ -55,7 +158,30 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # 🐘 POSTGRES
   postgres:
     image: postgres:15
     environment:
@@ -63,13 +189,35 @@ services:
       POSTGRES_PASSWORD: app
       POSTGRES_DB: video
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app"]
+      test: ["CMD-SHELL", "pg_isready -U app -d video"]
       interval: 5s
+      timeout: 3s
       retries: 5
+    restart: unless-stopped
+    networks:
+      - app-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
+  redis_data:
+  kafka_data:
+  uploads_data:
+  processed_data:
+
+networks:
+  app-network:
+    driver: bridge
