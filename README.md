@@ -70,3 +70,60 @@ docker system df
 
 # check env varibales used
 grep -r "process\.env\." apps/api/src apps/worker/src | grep -v node_modules | grep -oE 'process\.env\.[A-Z_]+' | sort -u
+
+Actually free: Minikube on Oracle Cloud ARM VM
+
+Oracle VM is free forever (4 cores, 24GB RAM)
+Run Minikube on it
+Real public IP
+Full k8s experience
+This is what I'd recommend
+
+You get:
+
+Real Kubernetes (not local toy)
+Public URL
+Free forever
+Enough resources to run your full stack
+
+
+The plan:
+
+Oracle Cloud ARM VM (free)
+Install Minikube + kubectl on it
+Write k8s manifests for your services
+Set up GitHub Actions CI/CD
+Point a domain at it (optional)
+
+Your k8s manifests will need:
+
+Deployment + Service for api, worker, web
+Job for migrate
+StatefulSet for postgres, kafka, redis
+PersistentVolumeClaim for shared uploads/processed volumes
+ConfigMap + Secret for env vars
+
+docker login
+docker compose build
+docker compose push
+
+Step 2 — Sign up for Oracle Cloud
+Go to cloud.oracle.com, create account. Use a real credit card (won't be charged). During VM creation choose:
+
+Shape: Ampere A1 (ARM, free)
+OCPU: 4, RAM: 24GB
+OS: Ubuntu 22.04
+Add your SSH public key
+
+Step 3 — Come back here
+Once you have the VM's public IP and can SSH into it, I'll walk you through:
+
+Installing Docker, kubectl, Minikube
+Writing all k8s manifests
+Setting up GitHub Actions
+
+On Minikube you'll need to enable the addon:
+bashminikube addons enable volumesnapshots
+minikube addons enable csi-hostpath-driver
+Then patch the hostpath storage class to support ReadWriteMany:
+bashkubectl patch storageclass csi-hostpath-sc -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'

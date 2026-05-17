@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: video-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      initContainers:
+        - name: wait-for-kafka
+          image: confluentinc/cp-kafka:7.5.0
+          command:
+            - sh
+            - -c
+            - |
+              until kafka-broker-api-versions --bootstrap-server kafka-service:9092; do
+                echo "Waiting for kafka..."
+                sleep 5
+              done
+        - name: wait-for-migrate
+          image: postgres:15
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h postgres-service -U app -d video; do
+                echo "Waiting for postgres..."
+                sleep 2
+              done
+      containers:
+        - name: worker
+          image: riturroy/myvideoapp-worker:latest
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+            - name: processed
+              mountPath: /app/processed
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 512Mi
+              cpu: 1000m
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+        - name: processed
+          persistentVolumeClaim:
+            claimName: processed-pvc
