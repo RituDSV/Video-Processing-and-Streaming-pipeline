@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: video-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      initContainers:
+        - name: wait-for-migrate
+          image: bitnami/kubectl:latest
+          command:
+            - sh
+            - -c
+            - |
+              until kubectl get job migrate -n video-platform -o jsonpath='{.status.succeeded}' | grep -q '1'; do
+                echo "Waiting for migrate job..."
+                sleep 5
+              done
+      containers:
+        - name: api
+          image: riturroy/myvideoapp-api:latest
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+            - name: processed
+              mountPath: /app/processed
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 5
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 250m
+            limits:
+              memory: 512Mi
+              cpu: 1000m
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: uploads-pvc
+        - name: processed
+          persistentVolumeClaim:
+            claimName: processed-pvc

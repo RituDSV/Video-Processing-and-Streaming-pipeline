@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: video-platform
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      initContainers:
+        - name: wait-for-api
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              until wget -q --spider http://api-service:3000/health; do
+                echo "Waiting for api..."
+                sleep 5
+              done
+      containers:
+        - name: web
+          image: riturroy/myvideoapp-web:latest
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 100m
+            limits:
+              memory: 256Mi
+              cpu: 500m
